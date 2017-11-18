@@ -1,0 +1,8 @@
+
+rabbitmq:
+  address: ""
+  username: ""
+  password: ""
+  queues:
+    messages: ""
+    events: ""

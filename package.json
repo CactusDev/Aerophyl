@@ -1,0 +1,31 @@
+{
+  "name": "aerophyl-proxy",
+  "version": "1.0.0",
+  "description": "Connects to services allowing Aerophyl to scale",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CactusDev/aerophyl-proxy.git"
+  },
+  "author": "CactusDev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CactusDev/aerophyl-proxy/issues"
+  },
+  "homepage": "https://github.com/CactusDev/aerophyl-proxy#readme",
+  "dependencies": {
+    "@angular/core": "^5.0.2",
+    "@types/amqp": "^0.2.3",
+    "@types/config": "0.0.33",
+    "amqp": "^0.2.6",
+    "cactus-stl": "^1.0.8",
+    "config": "^1.28.1",
+    "js-yaml": "^3.10.0",
+    "reflect-metadata": "^0.1.10",
+    "rxjs": "^5.5.2",
+    "tmi.js": "^1.2.1"
+  }
+}
