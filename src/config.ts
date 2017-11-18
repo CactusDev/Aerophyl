@@ -1,5 +1,6 @@
 
 export class Config {
+	public stuff: string;
 	public rabbitmq: {
 		address: string;
 		username: string;

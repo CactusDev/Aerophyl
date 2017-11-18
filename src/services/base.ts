@@ -3,15 +3,37 @@ import { ServiceStatus } from "./status";
 import { IStrategy, ExponentialBackoffStrategy } from "../strategies";
 
 export abstract class AbstractService {
-	private status: ServiceStatus = ServiceStatus.NONE;
+	protected status: ServiceStatus = ServiceStatus.NONE;
 
-	constructor(private info: ConnectionInformation, private reconnectionStrategy = new ExponentialBackoffStrategy()) {
+	constructor(protected info: ConnectionInformation, protected reconnectionStrategy = new ExponentialBackoffStrategy()) {
 
 	}
 
-	public abstract async connect(channel: string, bot: BotInfo): Promise<void>;
-	public abstract async reconnect(): Promise<boolean>;
-	public abstract async disconnect(): Promise<boolean>;
+	public async connect(channel: string, bot: BotInfo): Promise<boolean> {
+		if (this.status >= ServiceStatus.CONNECTING) {
+			return false;
+		}
+		// Not already attempting to connect, so actually connect.
+		return await this.doConnect(channel, bot);
+	}
+
+	public async reconnect(): Promise<boolean> {
+		if (this.status !== ServiceStatus.DISCONNECTED) {
+			return false;
+		}
+		return await this.doReconnect();
+	}
+
+	public async disconnect(): Promise<boolean> {
+		if (this.status !== ServiceStatus.READY) {
+			return false;
+		}
+		return await this.disconnect();
+	}
+
+	protected abstract async doConnect(channel: string, bot: BotInfo): Promise<boolean>;
+	protected abstract async doReconnect(): Promise<boolean>;
+	protected abstract async doDisconnect(): Promise<boolean>;
 
 	public abstract async onMessage<T>(message: T): Promise<ServiceMessage>;
 
