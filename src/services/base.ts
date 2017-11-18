@@ -14,13 +14,15 @@ export abstract class AbstractService {
 			return false;
 		}
 		// Not already attempting to connect, so actually connect.
-		return await this.doConnect(channel, bot);
+		const connected = await this.doConnect(channel, bot);
+		if (!connected) {
+			return false;
+		}
+		this.status = ServiceStatus.CONNECTED;
 	}
 
 	public async reconnect(): Promise<boolean> {
-		if (this.status !== ServiceStatus.DISCONNECTED) {
-			return false;
-		}
+		this.status = ServiceStatus.RECONNECTING;
 		return await this.doReconnect();
 	}
 

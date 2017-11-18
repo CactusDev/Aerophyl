@@ -5,11 +5,13 @@ import { Service } from "../annotation";
 import { AbstractService } from "./base";
 import { ServiceStatus } from "./status";
 
+import { sleep } from "../util";
+
 @Service("Twitch")
 export class TwitchService extends AbstractService {
 	private instance: any;
 
-	public async doConnect(channel: string, bot: BotInfo): Promise<boolean> {
+	protected async doConnect(channel: string, bot: BotInfo): Promise<boolean> {
 		const options = {
 			connection: {
 				reconnect: false
@@ -49,11 +51,25 @@ export class TwitchService extends AbstractService {
 		return true;
 	}
 
-	public async doReconnect(): Promise<boolean> {
+	protected async doReconnect(): Promise<boolean> {
+		try {
+			this.instance.disconnect();
+		} catch (e) {}
+
+		const time = await this.reconnectionStrategy.next();
+		console.log(`Attempting to reconnect... Waiting ${time} seconds...`);
+		await sleep(time * 1000);
+
+		console.log("Reconnecting...");
+		try {
+			await this.instance.connect();
+		} catch (e) {
+			return await this.doReconnect();
+		}
 		return true;
 	}
 
-	public async doDisconnect(): Promise<boolean> {
+	protected async doDisconnect(): Promise<boolean> {
 		try {
 			await this.instance.disconnect();
 		} catch (e) {

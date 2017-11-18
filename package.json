@@ -21,6 +21,7 @@
     "@types/amqp": "^0.2.3",
     "@types/config": "0.0.33",
     "amqp": "^0.2.6",
+    "argumenty": "0.0.2",
     "cactus-stl": "^1.0.8",
     "config": "^1.28.1",
     "js-yaml": "^3.10.0",
