@@ -8,8 +8,8 @@ Logger.addContainer("Services");
 
 import { ReflectiveInjector } from "@angular/core";
 import { Config } from "./config";
-import { Core } from "./core";
 import { ServiceManager } from "./services/manager";
+import { Core } from "./core";
 
 import { Argumenty, ParsedArgument } from "argumenty";
 
@@ -28,7 +28,6 @@ const argumenty = new Argumenty(
 		}
 	}}
 );
-argumenty.parse();
 
 const injector = ReflectiveInjector.resolveAndCreate([
 	{
@@ -39,13 +38,20 @@ const injector = ReflectiveInjector.resolveAndCreate([
 		provide: ServiceManager,
 		deps: [Config],
 		useFactory: (config: Config) => {
-			const filter: { [key: string]: string } = argumenty.get("filter") || {};
-			return new ServiceManager(config, filter);
+			return new ServiceManager(config);
 		}
 	},
-	Core
+	{
+		provide: Core,
+		deps: [ServiceManager],
+		useFactory: (manager: ServiceManager) => {
+			return new Core(manager);
+		}
+	}
 ]);
 
+argumenty.parse();
+const filter: { [key: string]: string } = argumenty.get("filter") || {};
 
-const core = injector.get(Core);
-core.start();
+const core: Core = injector.get(Core);
+core.start(filter);

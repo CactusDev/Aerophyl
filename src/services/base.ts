@@ -19,6 +19,7 @@ export abstract class AbstractService {
 			return false;
 		}
 		this.status = ServiceStatus.CONNECTED;
+		return true;
 	}
 
 	public async reconnect(): Promise<boolean> {

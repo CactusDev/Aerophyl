@@ -12,8 +12,8 @@ export class Core {
 
 	}
 
-	public async start() {
+	public async start(filter: { [key: string]: string }) {
 		Logger.log("Services", "Connecting to available channels...");
-		await this.manager.connectChannels();
+		await this.manager.connectChannels(filter);
 	}
 }

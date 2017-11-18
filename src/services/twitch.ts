@@ -1,5 +1,8 @@
 
 const tmi = require("tmi.js");
+const chalk = require("chalk");
+
+import { Logger } from "cactus-stl";
 
 import { Service } from "../annotation";
 import { AbstractService } from "./base";
@@ -44,7 +47,8 @@ export class TwitchService extends AbstractService {
 				service: "Twitch",
 				source: state["display-name"]
 			};
-			console.log(JSON.stringify(serviceMessage));
+			Logger.log("services", "<- Message(Twitch)", chalk.green(state["display-name"]) + ":", chalk.magenta(message));
+			// console.log(JSON.stringify(serviceMessage));
 		});
 		this.instance = instance;
 
