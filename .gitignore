@@ -60,3 +60,4 @@ typings/
 # custom
 config/local.yml
 dist/
+test.ts

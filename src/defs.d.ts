@@ -23,7 +23,7 @@ interface ServiceMessage {
 	channel: string;
 	botInfo: BotInfo;
 	service: ServiceType;
-	meta: { [key: string]: string };
+	meta: { [key: string]: any };
 }
 
 interface ServiceEvent {
