@@ -18,10 +18,10 @@
   "homepage": "https://github.com/CactusDev/aerophyl-proxy#readme",
   "dependencies": {
     "@angular/core": "^5.0.2",
-    "@types/amqp": "^0.2.3",
-    "@types/chalk": "^2.2.0",
+    "@types/bluebird": "^3.5.18",
     "@types/config": "0.0.33",
-    "amqp": "^0.2.6",
+    "@types/node": "^8.0.53",
+    "amqp-ts": "^1.4.0",
     "argumenty": "0.0.2",
     "cactus-stl": "^1.0.9",
     "chalk": "^2.3.0",

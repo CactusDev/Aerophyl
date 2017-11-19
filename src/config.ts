@@ -2,7 +2,8 @@
 export class Config {
 	public stuff: string;
 	public rabbitmq: {
-		address: string;
+		host: string;
+		port: number;
 		username: string;
 		password: string;
 		queues: {

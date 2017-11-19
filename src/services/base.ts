@@ -1,25 +1,31 @@
 
 import { ServiceStatus } from "./status";
 import { IStrategy, ExponentialBackoffStrategy } from "../strategies";
+import { RabbitHandler } from "../rabbit";
+
+import { Logger } from "cactus-stl";
 
 export abstract class AbstractService {
 	protected status: ServiceStatus = ServiceStatus.NONE;
+	public name: string;
+	protected single: boolean;
 
-	constructor(protected info: ConnectionInformation, protected reconnectionStrategy = new ExponentialBackoffStrategy()) {
+	constructor(protected info: ConnectionInformation, protected rabbit: RabbitHandler, protected reconnectionStrategy = new ExponentialBackoffStrategy()) {
 
 	}
 
-	public async connect(channel: string, bot: BotInfo): Promise<boolean> {
-		if (this.status >= ServiceStatus.CONNECTING) {
+	public async connect(channel: string, bot: BotInfo) {
+		if (this.status !== ServiceStatus.NONE && this.single) {
 			return false;
 		}
 		// Not already attempting to connect, so actually connect.
 		const connected = await this.doConnect(channel, bot);
 		if (!connected) {
-			return false;
+			Logger.log("services", `Unable to connect to channel ${channel} on service ${name} as user ${bot.username}`);
+			return;
 		}
 		this.status = ServiceStatus.CONNECTED;
-		return true;
+		Logger.log("services", `Connected to channel ${channel} on service ${this.name} as user ${bot.username}`);
 	}
 
 	public async reconnect(): Promise<boolean> {
@@ -38,7 +44,7 @@ export abstract class AbstractService {
 	protected abstract async doReconnect(): Promise<boolean>;
 	protected abstract async doDisconnect(): Promise<boolean>;
 
-	public abstract async onMessage<T>(message: T): Promise<ServiceMessage>;
+	public abstract async onMessage<T>(message: T, meta: any): Promise<ServiceMessage>;
 
 	public setStatus(status: ServiceStatus) {
 		console.log(`Service status changed to ${ServiceStatus[status]} from ${ServiceStatus[this.status]}`);

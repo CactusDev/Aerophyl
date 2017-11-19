@@ -6,16 +6,17 @@ Logger.initialize();
 Logger.addContainer("Core");
 Logger.addContainer("Services");
 
+import "reflect-metadata";
+
 import { ReflectiveInjector } from "@angular/core";
 import { Config } from "./config";
 import { ServiceManager } from "./services/manager";
 import { Core } from "./core";
+import { RabbitHandler } from "./rabbit";
 
 import { Argumenty, ParsedArgument } from "argumenty";
 
 import * as nconf from "config";
-
-import "reflect-metadata";
 
 const argumenty = new Argumenty(
 	{ short: "f", long: "filter", type: "string", transformer: (argument: ParsedArgument) => {
@@ -36,16 +37,23 @@ const injector = ReflectiveInjector.resolveAndCreate([
 	},
 	{
 		provide: ServiceManager,
+		deps: [Config, RabbitHandler],
+		useFactory: (config: Config, rabbit: RabbitHandler) => {
+			return new ServiceManager(config, rabbit);
+		}
+	},
+	{
+		provide: RabbitHandler,
 		deps: [Config],
 		useFactory: (config: Config) => {
-			return new ServiceManager(config);
+			return new RabbitHandler(config);
 		}
 	},
 	{
 		provide: Core,
-		deps: [ServiceManager],
-		useFactory: (manager: ServiceManager) => {
-			return new Core(manager);
+		deps: [ServiceManager, RabbitHandler],
+		useFactory: (manager: ServiceManager, rabbit: RabbitHandler) => {
+			return new Core(manager, rabbit);
 		}
 	}
 ]);

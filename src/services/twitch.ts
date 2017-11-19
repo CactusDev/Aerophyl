@@ -10,7 +10,7 @@ import { ServiceStatus } from "./status";
 
 import { sleep } from "../util";
 
-@Service("Twitch")
+@Service("Twitch", { single: false })
 export class TwitchService extends AbstractService {
 	private instance: any;
 
@@ -39,16 +39,8 @@ export class TwitchService extends AbstractService {
 				return;
 			}
 
-			const serviceMessage: ServiceMessage = {
-				botInfo: bot,
-				channel: source,
-				meta: state,
-				parts: message.split(" "),
-				service: "Twitch",
-				source: state["display-name"]
-			};
-			Logger.log("services", "<- Message(Twitch)", chalk.green(state["display-name"]) + ":", chalk.magenta(message));
-			// console.log(JSON.stringify(serviceMessage));
+			const result = await this.onMessage(message, { state, bot, source });
+			await this.rabbit.queueChatMessage(result);
 		});
 		this.instance = instance;
 
@@ -83,7 +75,16 @@ export class TwitchService extends AbstractService {
 		return true;
 	}
 
-	public async onMessage<String>(message: String): Promise<ServiceMessage> {
-		return null;
+	public async onMessage<String>(message: String, meta: any): Promise<ServiceMessage> {
+		const serviceMessage: ServiceMessage = {
+			botInfo: meta.bot,
+			channel: meta.source,
+			meta: meta.state,
+			parts: message.toString().split(" "),
+			service: "Twitch",
+			source: meta.state["display-name"]
+		};
+		Logger.log("services", `<- Message(Twitch [${meta.source}])`, chalk.green(meta.state["display-name"]) + ":", chalk.magenta(message));
+		return serviceMessage;
 	}
 }

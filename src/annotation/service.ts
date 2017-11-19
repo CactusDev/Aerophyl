@@ -1,8 +1,18 @@
 
 import { ServiceStatus } from "../services/status";
+import { registered } from "../services/registry";
 
-export function Service(serviceName: string) {
+import { Logger } from "cactus-stl";
+
+export interface ServiceOptions {
+	single?: boolean;
+}
+
+export function Service(name: string, options?: ServiceOptions) {
 	return (target: Function) => {
-		console.log("this is a service", serviceName);
+		target.prototype.single = options.single || true;
+		target.prototype.name = name;
+
+		Logger.log("core", `Registered service '${name}'!`);
 	}
 }

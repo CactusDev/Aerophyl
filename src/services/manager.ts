@@ -2,15 +2,13 @@
 import { Config } from "../config";
 import { AbstractService, TwitchService } from ".";
 import { Logger } from "cactus-stl";
-
-const serviceMap: { [name: string]: typeof AbstractService } ={
-	Twitch: TwitchService
-}
+import { RabbitHandler } from "../rabbit";
+import { registered as serviceMap } from "./registry";
 
 export class ServiceManager {
 	private filter: { [key: string]: string };
 
-	constructor(private config: Config) {
+	constructor(private config: Config, private rabbit: RabbitHandler) {
 
 	}
 
@@ -51,10 +49,7 @@ export class ServiceManager {
 			Logger.error("services", `Invalid service: ${connection.service}.`);
 			return;
 		}
-		const service: AbstractService = new(serviceType.bind(this, connection));
-		const connected = await service.connect(channel, bot);
-		if (connected) {
-			Logger.log("services", `Connected to channel ${channel} on service ${connection.service} as user ${bot.username}`);
-		}
+		const service: AbstractService = new(serviceType.bind(this, connection, this.rabbit));
+		await service.connect(channel, bot);
 	}
 }

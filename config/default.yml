@@ -1,6 +1,10 @@
 
+# This is a temp thing to allow me to use oauth
+stuff: ""
+
 rabbitmq:
-  address: ""
+  host: ""
+  port: 5743
   username: ""
   password: ""
   queues:
