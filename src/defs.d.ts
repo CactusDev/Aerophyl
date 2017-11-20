@@ -32,3 +32,14 @@ interface ServiceEvent {
 	channel: string;
 	service: ServiceType;
 }
+
+interface ProxyResponse {
+    channel: string;
+    message: string;
+    service: string;
+
+    meta: {
+        action: boolean;
+        target?: string;
+    }
+}

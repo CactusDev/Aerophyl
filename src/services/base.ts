@@ -46,6 +46,8 @@ export abstract class AbstractService {
 
 	public abstract async onMessage<T>(message: T, meta: any): Promise<ServiceMessage>;
 
+	public abstract async send(message: ProxyResponse): Promise<void>;
+
 	public setStatus(status: ServiceStatus) {
 		console.log(`Service status changed to ${ServiceStatus[status]} from ${ServiceStatus[this.status]}`);
 		this.status = status;

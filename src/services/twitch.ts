@@ -87,4 +87,12 @@ export class TwitchService extends AbstractService {
 		Logger.log("services", `<- Message(Twitch [${meta.source}])`, chalk.green(meta.state["display-name"]) + ":", chalk.magenta(message));
 		return serviceMessage;
 	}
+
+	public async send(message: ProxyResponse): Promise<void> {
+		if (message.meta.target) {
+			this.instance.whisper(message.meta.target, message.message);
+			return;
+		}
+		this.instance.say(message.channel, message.message);
+	}
 }

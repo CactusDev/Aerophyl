@@ -16,6 +16,12 @@ export class Core {
 	public async start(filter: { [key: string]: string }) {
 		Logger.log("services", "Connecting to available channels...");
 		await this.rabbit.connect();
+
+		this.rabbit.on("incoming:service:message", async (message: string) => {
+			const msg: ProxyResponse = JSON.parse(message);
+			await this.manager.send(msg);
+		});
+
 		await this.manager.connectChannels(filter);
 	}
 }
