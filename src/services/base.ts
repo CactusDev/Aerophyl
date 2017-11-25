@@ -5,6 +5,18 @@ import { RabbitHandler } from "../rabbit";
 
 import { Logger } from "cactus-stl";
 
+export interface ChannelMeta {
+	connection: ConnectionInformation;
+	bot: BotInfo;
+	service: AbstractService;
+}
+
+export interface QueuedChannel {
+	channel: string;
+	bot: BotInfo;
+	connection: ConnectionInformation
+}
+
 export abstract class AbstractService {
 	protected status: ServiceStatus = ServiceStatus.NONE;
 	public name: string;

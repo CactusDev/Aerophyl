@@ -1,6 +1,7 @@
 
 export class Config {
 	public stuff: string;
+	public identifier: string;
 	public rabbitmq: {
 		host: string;
 		port: number;
@@ -9,6 +10,7 @@ export class Config {
 		queues: {
 			messages: string;
 			events: string;
+			channels: string;
 		}
 	};
 }

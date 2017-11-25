@@ -5,12 +5,10 @@ import { Logger } from "cactus-stl";
 import { RabbitHandler } from "../rabbit";
 import { registered as serviceMap } from "./registry";
 
+import { ChannelMeta, QueuedChannel } from ".";
+
 interface ConnectedChannels {
-	[name: string]: {
-		connection: ConnectionInformation;
-		bot: BotInfo;
-		service: AbstractService
-	}
+	[name: string]: ChannelMeta[]
 }
 
 export class ServiceManager {
@@ -18,7 +16,15 @@ export class ServiceManager {
 	private connected: ConnectedChannels = {};
 
 	constructor(private config: Config, private rabbit: RabbitHandler) {
+		this.rabbit.on("incoming:service:message", async (message: string) => {
+			const msg: ProxyResponse = JSON.parse(message);
+			await this.send(msg);
+		});
 
+		this.rabbit.on("incoming:queue:channel", async (message: string) => {
+			const channel: QueuedChannel = JSON.parse(message);
+			await this.connectChannel(channel.channel, channel.connection, channel.bot);
+		});
 	}
 
 	public async connectChannels(filter: { [key: string]: string }) {
@@ -31,21 +37,33 @@ export class ServiceManager {
 			}
 		};
 
-		const bot: BotInfo =  {
+		const bot: BotInfo = {
 			botId: 123,
 			username: "CactusBotDev"
 		};
 
-		await this.connectChannel("innectic", connection, bot);
+		//await this.connectChannel("innectic", connection, bot);
 	}
 
 	public async stop() {
-		
+		for (let name of Object.keys(this.connected)) {
+			for (let service of this.connected[name]) {
+				Logger.log("services", `Disconnecting channel ${name} from service ${service.service.name}...`);
+				// Disconnect the service handler
+				await service.service.disconnect();
+
+				Logger.log("services", `Queuing channel ${name} from service ${service.service.name}...`);
+				// Put the channel into the messaging queue of channels to be connected.
+				await this.rabbit.queueChannelConnection({ bot: service.bot, channel: name, connection: service.connection });
+
+				Logger.log("services", `${name} on service ${service.service.name} has been disconnected & queued!`);
+			}
+		}
 	}
 
 	private async connectChannel(channel: string, connection: ConnectionInformation, bot: BotInfo) {
 		// See if we're filtering the name
-		if (this.filter.name) {
+		if (this.filter && this.filter.name) {
 			// Since we're filtering the name of the channels we can connect to, lets
 			// see if the current channels name matches the regex.
 			const regex = new RegExp(this.filter.name);
@@ -62,14 +80,16 @@ export class ServiceManager {
 			Logger.error("services", `Invalid service: ${connection.service}.`);
 			return;
 		}
-		const service: AbstractService = new(serviceType.bind(this, connection, this.rabbit));
+		const service: AbstractService = new (serviceType.bind(this, connection, this.rabbit));
 		await service.connect(channel, bot);
 
-		this.connected[channel] = {
-			bot,
-			connection,
-			service
-		}
+		this.connected[channel] = [
+			{
+				bot,
+				connection,
+				service
+			}
+		]
 	}
 
 	public async send(message: ProxyResponse) {
@@ -78,10 +98,7 @@ export class ServiceManager {
 			Logger.error("Services", "Attempted to send a message to a channel that is not connected?!")
 			return;
 		}
-		const channel = this.connected[realChannel];
-		if (channel.connection.service !== message.service) {
-			return;
-		}
-		channel.service.send(message);
+		this.connected[realChannel].filter(chan => chan.connection.service === message.service).forEach(
+			async service => await service.service.send(message));
 	}
 }

@@ -2,6 +2,8 @@
 # This is a temp thing to allow me to use oauth
 stuff: ""
 
+identifier: ""
+
 rabbitmq:
   host: ""
   port: 5743
@@ -10,3 +12,4 @@ rabbitmq:
   queues:
     messages: ""
     events: ""
+    channels: ""
