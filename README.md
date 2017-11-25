@@ -1,2 +1,3 @@
-# aerophyl-proxy
-Connects to the services, allowing Aerophyl to scale properly
+# Aerophyl
+
+Connects to the services, allowing Phyllode to scale properly
