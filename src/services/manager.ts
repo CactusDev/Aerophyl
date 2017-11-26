@@ -93,12 +93,11 @@ export class ServiceManager {
 	}
 
 	public async send(message: ProxyResponse) {
-		const realChannel = message.channel.replace("#", ""); // HACK
-		if (this.connected[realChannel] === undefined) {
+		if (this.connected[message.channel] === undefined) {
 			Logger.error("Services", "Attempted to send a message to a channel that is not connected?!")
 			return;
 		}
-		this.connected[realChannel].filter(chan => chan.connection.service === message.service).forEach(
+		this.connected[message.channel].filter(chan => chan.connection.service === message.service).forEach(
 			async service => await service.service.send(message));
 	}
 }

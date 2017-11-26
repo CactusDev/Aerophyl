@@ -48,7 +48,7 @@ export class TwitchService extends AbstractService {
 
 	protected async doReconnect(): Promise<boolean> {
 		try {
-			this.instance.disconnect();
+			await this.instance.disconnect();
 		} catch (e) {}
 
 		const time = await this.reconnectionStrategy.next();
@@ -77,7 +77,7 @@ export class TwitchService extends AbstractService {
 	public async onMessage<String>(message: String, meta: any): Promise<ServiceMessage> {
 		const serviceMessage: ServiceMessage = {
 			botInfo: meta.bot,
-			channel: meta.source,
+			channel: meta.source.replace("#", ""),
 			meta: meta.state,
 			parts: message.toString().split(" "),
 			service: "Twitch",
