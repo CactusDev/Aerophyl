@@ -3,7 +3,7 @@ import { Config } from "../config";
 import { AbstractService, TwitchService } from ".";
 import { Logger } from "cactus-stl";
 import { RabbitHandler } from "../rabbit";
-import { registered as serviceMap } from "./registry";
+import { registered as serviceMap, singleInstances } from "./registry";
 
 import { ChannelMeta, QueuedChannel } from ".";
 
@@ -42,7 +42,7 @@ export class ServiceManager {
 			username: "CactusBotDev"
 		};
 
-		// await this.connectChannel("innectic", connection, bot);
+		// await this.connectChannel("cactusbotdev", connection, bot);
 	}
 
 	public async stop() {
@@ -74,15 +74,32 @@ export class ServiceManager {
 				return;
 			}
 		}
-		// Find the service from the name
+
+		let service: AbstractService = null;
+
 		const serviceType = serviceMap[connection.service];
 		if (!serviceType) {
 			Logger.error("services", `Invalid service: ${connection.service}.`);
 			return;
 		}
-		const service: AbstractService = new (serviceType.bind(this, connection, this.rabbit));
-		await service.connect(channel, bot);
 
+		if (singleInstances[connection.service] === null) {
+			const serviceHandler = singleInstances[connection.service];
+			if (!serviceHandler) {
+				service = new (serviceType.bind(this, connection, this.rabbit));
+				singleInstances[connection.service] = service;
+
+				await service.connect(channel, bot);
+			}
+		} else {
+			service = new (serviceType.bind(this, connection, this.rabbit));
+			await service.connect(channel, bot);
+		}
+		if (!service) {
+			Logger.error("services", `Service for channel ${channel} on service ${service.name} was never created!`);
+			return;
+		}
+		// Find the service from the name
 		this.connected[channel] = [
 			{
 				bot,

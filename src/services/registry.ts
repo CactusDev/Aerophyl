@@ -1,10 +1,33 @@
 
 import { AbstractService, TwitchService } from ".";
 
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+// TODO: General cleanup
+
 interface RegisteredServices {
-	[name: string]: typeof AbstractService
+	[name: string]: typeof AbstractService;
 }
 
-export let registered: RegisteredServices = {
+interface SingleInstanceServices {
+	[name: string]: AbstractService
+}
+
+export const registered: RegisteredServices = {
 	Twitch: TwitchService
 };
+
+export const singleInstances: SingleInstanceServices = {
+	Twitch: null
+}

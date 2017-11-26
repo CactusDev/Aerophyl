@@ -20,7 +20,7 @@ export interface QueuedChannel {
 export abstract class AbstractService {
 	protected status: ServiceStatus = ServiceStatus.NONE;
 	public name: string;
-	protected single: boolean;
+	public single: boolean;
 
 	constructor(protected info: ConnectionInformation, protected rabbit: RabbitHandler, protected reconnectionStrategy = new ExponentialBackoffStrategy()) {
 
