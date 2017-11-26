@@ -1,6 +1,7 @@
 
 export class Config {
 	public stuff: string;
+	public otherstuff: string;
 	public identifier: string;
 	public rabbitmq: {
 		host: string;

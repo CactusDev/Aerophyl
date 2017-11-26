@@ -56,7 +56,7 @@ export abstract class AbstractService {
 	protected abstract async doReconnect(): Promise<boolean>;
 	protected abstract async doDisconnect(): Promise<boolean>;
 
-	public abstract async onMessage<T>(message: T, meta: any): Promise<ServiceMessage>;
+	public abstract async onMessage(message: any, meta: any): Promise<ServiceMessage>;
 
 	public abstract async send(message: ProxyResponse): Promise<void>;
 

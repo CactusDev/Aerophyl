@@ -30,19 +30,31 @@ export class ServiceManager {
 	public async connectChannels(filter: { [key: string]: string }) {
 		this.filter = filter;
 		// Temp things for testing
-		const connection: ConnectionInformation = {
+		let connection: ConnectionInformation = {
 			service: "Twitch",
 			auth: {
 				access: this.config.stuff
 			}
 		};
 
-		const bot: BotInfo = {
+		let bot: BotInfo = {
 			botId: 123,
 			username: "CactusBotDev"
 		};
 
-		// await this.connectChannel("cactusbotdev", connection, bot);
+		await this.connectChannel("innectic", connection, bot);
+
+		// connection = {
+		// 	service: "Mixer",
+		// 	auth: {
+		// 		access: this.config.otherstuff
+		// 	}
+		// };
+
+		// bot = {
+		// 	botId: 25873,
+		// 	username: "CactusBotDev"
+		// };
 	}
 
 	public async stop() {
@@ -99,14 +111,13 @@ export class ServiceManager {
 			Logger.error("services", `Service for channel ${channel} on service ${service.name} was never created!`);
 			return;
 		}
-		// Find the service from the name
-		this.connected[channel] = [
-			{
-				bot,
-				connection,
-				service
-			}
-		]
+		const connected = this.connected[channel] || [];
+		connected.push({
+			bot,
+			connection,
+			service
+		});
+		this.connected[channel]= connected;
 	}
 
 	public async send(message: ProxyResponse) {

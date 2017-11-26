@@ -60,6 +60,10 @@ export class RabbitHandler extends EventEmitter {
 	}
 
 	public async queueChatMessage(message: ServiceMessage) {
+		if (!message) {
+			console.error("Bad things in the rabbit handler");
+			return;
+		}
 		const using: any = message;
 		Object.keys(using.meta).filter(key => unwanted.indexOf(key) > -1).forEach(key => delete using.meta[key]);
 		const stringed = JSON.stringify(using);

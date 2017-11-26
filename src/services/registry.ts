@@ -1,5 +1,5 @@
 
-import { AbstractService, TwitchService } from ".";
+import { AbstractService, TwitchService, MixerService } from ".";
 
 // TODO: General cleanup
 // TODO: General cleanup
@@ -25,7 +25,8 @@ interface SingleInstanceServices {
 }
 
 export const registered: RegisteredServices = {
-	Twitch: TwitchService
+	Twitch: TwitchService,
+	Mixer: MixerService
 };
 
 export const singleInstances: SingleInstanceServices = {

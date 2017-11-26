@@ -10,7 +10,7 @@ export interface ServiceOptions {
 
 export function Service(name: string, options?: ServiceOptions) {
 	return (target: Function) => {
-		target.prototype.single = options.single || true;
+		target.prototype.single = (options || {}).single || true;
 		target.prototype.name = name;
 
 		Logger.log("core", `Registered service '${name}'!`);

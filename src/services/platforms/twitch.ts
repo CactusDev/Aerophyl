@@ -74,7 +74,7 @@ export class TwitchService extends AbstractService {
 		return true;
 	}
 
-	public async onMessage<String>(message: String, meta: any): Promise<ServiceMessage> {
+	public async onMessage(message: string, meta: any): Promise<ServiceMessage> {
 		const serviceMessage: ServiceMessage = {
 			botInfo: meta.bot,
 			channel: meta.source.replace("#", ""),
