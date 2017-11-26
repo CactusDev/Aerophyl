@@ -42,7 +42,7 @@ export class ServiceManager {
 			username: "CactusBotDev"
 		};
 
-		//await this.connectChannel("innectic", connection, bot);
+		// await this.connectChannel("innectic", connection, bot);
 	}
 
 	public async stop() {

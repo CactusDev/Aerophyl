@@ -4,11 +4,10 @@ const chalk = require("chalk");
 
 import { Logger } from "cactus-stl";
 
-import { Service } from "../annotation";
-import { AbstractService } from "./base";
-import { ServiceStatus } from "./status";
+import { Service } from "../../annotation";
+import { AbstractService, ServiceStatus } from "..";
 
-import { sleep } from "../util";
+import { sleep } from "../../util";
 
 @Service("Twitch", { single: false })
 export class TwitchService extends AbstractService {
