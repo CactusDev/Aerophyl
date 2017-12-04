@@ -69,7 +69,11 @@ export class MixerService extends AbstractService {
 		const serviceMessage: ServiceMessage = {
 			botInfo: meta.bot,
 			channel: meta.channel,
-			meta: {},
+			meta: {
+				role: message.user_roles[0],
+				action: message.message.meta.me || false,
+				target: message.message.meta.whisper || undefined
+			},
 			parts,
 			service: "Mixer",
 			source: message.user_name
