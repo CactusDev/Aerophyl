@@ -9,7 +9,7 @@ import { AbstractService, ServiceStatus } from "..";
 
 import { sleep } from "../../util";
 
-@Service("Twitch", { single: false })
+@Service("Twitch", { single: true })
 export class TwitchService extends AbstractService {
 	private instance: any;
 
@@ -83,7 +83,7 @@ export class TwitchService extends AbstractService {
 			service: "Twitch",
 			source: meta.state["display-name"]
 		};
-		Logger.log("services", `<- Message(Twitch [${meta.source}])`, chalk.green(meta.state["display-name"]) + ":", chalk.magenta(message));
+		Logger.info("services", `<- Message(Twitch [${meta.source}])`, chalk.green(meta.state["display-name"]) + ":", chalk.magenta(message));
 		return serviceMessage;
 	}
 

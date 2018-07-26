@@ -1,6 +1,5 @@
 
-import { ServiceStatus } from "../services/status";
-import { registered } from "../services/registry";
+import { ServiceStatus } from "../services";
 
 import { Logger } from "cactus-stl";
 
@@ -13,6 +12,6 @@ export function Service(name: string, options?: ServiceOptions) {
 		target.prototype.single = (options || {}).single || true;
 		target.prototype.name = name;
 
-		Logger.log("core", `Registered service '${name}'!`);
+		Logger.info("core", `Registered service '${name}'!`);
 	}
 }

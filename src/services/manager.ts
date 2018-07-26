@@ -3,8 +3,9 @@ import { Config } from "../config";
 import { AbstractService, TwitchService } from ".";
 import { Logger } from "cactus-stl";
 import { RabbitHandler } from "../rabbit";
-import { registered as serviceMap, singleInstances } from "./registry";
+import { serviceFromName } from ".";
 
+import * as Amqp from "amqp-ts";
 import { ChannelMeta, QueuedChannel } from ".";
 
 interface ConnectedChannels {
@@ -16,14 +17,25 @@ export class ServiceManager {
 	private connected: ConnectedChannels = {};
 
 	constructor(private config: Config, private rabbit: RabbitHandler) {
-		this.rabbit.on("incoming:service:message", async (message: string) => {
-			const msg: ProxyResponse = JSON.parse(message);
-			await this.send(msg);
+		this.rabbit.on("incoming:service:message", async (message: Amqp.Message) => {
+			const content: ProxyResponse = JSON.parse(message.getContent());
+			if (!this.connected[content.channel]) {
+				return;
+			}
+
+			if (!this.connected[content.channel].some(meta => meta.service.name === content.service)) {
+				return;
+			}
+
+			message.ack();
+			await this.send(content);
 		});
 
-		this.rabbit.on("incoming:queue:channel", async (message: string) => {
-			const channel: QueuedChannel = JSON.parse(message);
-			await this.connectChannel(channel.channel, channel.connection, channel.bot);
+		this.rabbit.on("incoming:queue:channel", async (message: Amqp.Message) => {
+			const content: QueuedChannel = JSON.parse(message.getContent());
+			message.ack();
+
+			await this.connectChannel(content.channel, content.connection, content.bot);
 		});
 	}
 
@@ -38,10 +50,9 @@ export class ServiceManager {
 		};
 
 		let bot: BotInfo = {
-			botId: 123,
+			botId: 25873,
 			username: "CactusBotDev"
 		};
-
 		// await this.connectChannel("innectic", connection, bot);
 
 		// connection = {
@@ -51,26 +62,21 @@ export class ServiceManager {
 		// 	}
 		// };
 
-		// bot = {
-		// 	botId: 25873,
-		// 	username: "CactusBotDev"
-		// };
+		// await this.connectChannel("innectic", connection, bot);
 	}
 
 	public async stop() {
-		for (let name of Object.keys(this.connected)) {
-			for (let service of this.connected[name]) {
-				Logger.log("services", `Disconnecting channel ${name} from service ${service.service.name}...`);
-				// Disconnect the service handler
-				await service.service.disconnect();
+		Object.keys(this.connected).forEach(async name => this.connected[name].forEach(async service => {
+			Logger.info("services", `Disconnecting channel ${name} from service ${service.service.name}...`);
+			// Disconnect the service handler
+			await service.service.disconnect();
 
-				Logger.log("services", `Queuing channel ${name} from service ${service.service.name}...`);
-				// Put the channel into the messaging queue of channels to be connected.
-				await this.rabbit.queueChannelConnection({ bot: service.bot, channel: name, connection: service.connection });
+			Logger.info("services", `Queuing channel ${name} from service ${service.service.name}...`);
+			// Put the channel into the messaging queue of channels to be connected.
+			await this.rabbit.queueChannelConnection({ bot: service.bot, channel: name, connection: service.connection });
 
-				Logger.log("services", `${name} on service ${service.service.name} has been disconnected & queued!`);
-			}
-		}
+			Logger.info("services", `${name} on service ${service.service.name} has been disconnected & queued!`);
+		}));
 	}
 
 	private async connectChannel(channel: string, connection: ConnectionInformation, bot: BotInfo) {
@@ -87,37 +93,25 @@ export class ServiceManager {
 			}
 		}
 
-		let service: AbstractService = null;
-
-		const serviceType = serviceMap[connection.service];
+		const serviceType = serviceFromName[connection.service];
 		if (!serviceType) {
 			Logger.error("services", `Invalid service: ${connection.service}.`);
 			return;
 		}
 
-		if (singleInstances[connection.service] === null) {
-			const serviceHandler = singleInstances[connection.service];
-			if (!serviceHandler) {
-				service = new (serviceType.bind(this, connection, this.rabbit));
-				singleInstances[connection.service] = service;
+		// TODO: Allow services (that support it) to be connected to multiple times through the use of
+		// the same handler
 
-				await service.connect(channel, bot);
-			}
-		} else {
-			service = new (serviceType.bind(this, connection, this.rabbit));
-			await service.connect(channel, bot);
-		}
-		if (!service) {
-			Logger.error("services", `Service for channel ${channel} on service ${service.name} was never created!`);
-			return;
-		}
+		let service: AbstractService = new (serviceType.bind(this, connection, this.rabbit));
+		await service.connect(channel, bot);
+
 		const connected = this.connected[channel] || [];
 		connected.push({
 			bot,
 			connection,
 			service
 		});
-		this.connected[channel]= connected;
+		this.connected[channel] = connected;
 	}
 
 	public async send(message: ProxyResponse) {

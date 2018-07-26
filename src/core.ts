@@ -1,12 +1,10 @@
 
-import { Injectable } from "@angular/core"
 import { Logger } from "cactus-stl";
 
 import { Config } from "./config";
 import { ServiceManager } from "./services/manager";
 import { RabbitHandler } from "./rabbit";
 
-@Injectable()
 export class Core {
 
 	constructor(private manager: ServiceManager, private rabbit: RabbitHandler) {
@@ -17,22 +15,22 @@ export class Core {
 		process.on("SIGINT", () => this.stop());
 		process.on("SIGTERM", () => this.stop());
 
-		Logger.log("services", "Connecting to available channels...");
 		await this.rabbit.connect();
+		Logger.info("services", "Connecting to available channels...");
 		await this.manager.connectChannels(filter);
 	}
 
 	public async stop() {
 		this.rabbit.disconnecting = true;
 		// Tell the channel manager to stop
-		Logger.log("services", "Disconnecting channels...");
+		Logger.info("services", "Disconnecting channels...");
 		await this.manager.stop();
-		Logger.log("services", "Disconnected from channels!");
+		Logger.info("services", "Disconnected from channels!");
 
 		// Disconnect from Rabbit
-		Logger.log("core", "Disconnecting from Rabbit...");
+		Logger.info("core", "Disconnecting from Rabbit...");
 		await this.rabbit.disconnect();
-		Logger.log("core", "Disconnected from Rabit!");
+		Logger.info("core", "Disconnected from Rabit!");
 
 		process.exit(0);
 	}

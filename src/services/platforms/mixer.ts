@@ -30,7 +30,7 @@ export class MixerService extends AbstractService {
 
 		let auth: IUserAuth;
 		try {
-			auth = await chat.auth(17887, bot.botId, chatInfo.authkey);
+			auth = await chat.auth(channelInfo.id, bot.botId, chatInfo.authkey);
 		} catch (e) {
 			Logger.error("services", e);
 			return false;
@@ -59,7 +59,7 @@ export class MixerService extends AbstractService {
 	}
 
 	public async onMessage(message: IChatMessage, meta: any): Promise<ServiceMessage> {
-		Logger.log("services", `<- Message(Mixer [${meta.channel}])`, chalk.green(message.user_name) + ":", chalk.magenta(message));
+		Logger.info("services", `<- Message(Mixer [${meta.channel}])`, chalk.green(message.user_name) + ":", chalk.magenta(message));
 
 		const parts: string[] = [];
 		for (let part of message.message.message) {

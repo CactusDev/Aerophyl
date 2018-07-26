@@ -1,20 +1,15 @@
 
 import { Logger } from "cactus-stl";
 
-Logger.initialize();
-
-Logger.addContainer("Core");
-Logger.addContainer("Services");
-
 import "reflect-metadata";
 
-import { ReflectiveInjector } from "@angular/core";
 import { Config } from "./config";
 import { ServiceManager } from "./services/manager";
 import { Core } from "./core";
 import { RabbitHandler } from "./rabbit";
 
 import { Argumenty, ParsedArgument } from "argumenty";
+import { Injector } from "dependy";
 
 import * as nconf from "config";
 
@@ -30,33 +25,24 @@ const argumenty = new Argumenty(
 	}}
 );
 
-const injector = ReflectiveInjector.resolveAndCreate([
+const injector = new Injector(
 	{
-		provide: Config,
-		useValue: nconf
+		injects: Config,
+		value: nconf
 	},
 	{
-		provide: ServiceManager,
-		deps: [Config, RabbitHandler],
-		useFactory: (config: Config, rabbit: RabbitHandler) => {
-			return new ServiceManager(config, rabbit);
-		}
+		injects: ServiceManager,
+		depends: [Config, RabbitHandler],
 	},
 	{
-		provide: RabbitHandler,
-		deps: [Config],
-		useFactory: (config: Config) => {
-			return new RabbitHandler(config);
-		}
+		injects: RabbitHandler,
+		depends: [Config],
 	},
 	{
-		provide: Core,
-		deps: [ServiceManager, RabbitHandler],
-		useFactory: (manager: ServiceManager, rabbit: RabbitHandler) => {
-			return new Core(manager, rabbit);
-		}
+		injects: Core,
+		depends: [ServiceManager, RabbitHandler],
 	}
-]);
+);
 
 argumenty.parse();
 const filter: { [key: string]: string } = argumenty.get("filter") || {};

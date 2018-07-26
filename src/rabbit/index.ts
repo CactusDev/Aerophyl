@@ -1,11 +1,9 @@
 
 import { Config } from "../config";
+import { QueuedChannel } from "../services";
 
 import { EventEmitter } from "events";
-
 import * as Amqp from "amqp-ts";
-
-import { QueuedChannel } from "../services";
 
 const unwanted = ["set-ts", "emotes-raw", "badges-raw", "room-id", "tmi-sent-ts", "color"];
 
@@ -18,14 +16,14 @@ export class RabbitHandler extends EventEmitter {
 	private incomingQueue: Amqp.Queue;
 	private channelQueue: Amqp.Queue;
 
-	private isDisconnecting: boolean = false;
+	private isDisconnecting = false;
 
 	constructor(private config: Config) {
 		super();
 	}
 
 	public async connect() {
-		this.connection = new Amqp.Connection(`amqp://localhost`);
+		this.connection = new Amqp.Connection(`amqp://${this.config.rabbitmq.host}:${this.config.rabbitmq.port}`);
 		this.proxyExchange = this.connection.declareExchange("proxy");
 		
 		this.messageQueue = this.connection.declareQueue(this.config.rabbitmq.queues.messages);
@@ -40,28 +38,36 @@ export class RabbitHandler extends EventEmitter {
 			if (this.isDisconnecting) {
 				return;
 			}
-			this.emit("incoming:service:message", message.getContent());
+			this.emit("incoming:service:message", message);
 			message.ack();
 		});
 
-		this.channelQueue.activateConsumer(async channel => {
+		this.channelQueue.activateConsumer(async message => {
 			if (this.isDisconnecting) {
 				return;
 			}
-			this.emit("incoming:queue:channel", channel.getContent());
-			channel.ack();
+			this.emit("incoming:queue:channel", message);
 		});
 
-		await this.connection.completeConfiguration()
+		await this.connection.completeConfiguration();
 	}
 
-	public async disconnect() {
-		await this.connection.close();
+	public async disconnect(): Promise<any> {
+		return new Promise<any>((resolve, reject) => {
+			// Make sure we don't spend over 5 seconds here
+			setTimeout(() => {
+				return resolve();
+			}, 5000);
+
+			this.connection.close().then(() => {
+				return resolve();
+			});
+		});
 	}
 
 	public async queueChatMessage(message: ServiceMessage) {
 		if (!message) {
-			console.error("Bad things in the rabbit handler");
+			console.error("Unable to queue message into Rabbit.");
 			return;
 		}
 		const using: any = message;

@@ -1,15 +1,16 @@
 
 # This is a temp thing to allow me to use oauth
 stuff: ""
+otherstuff: ""
 
-identifier: ""
+identifier: "testing"
 
 rabbitmq:
-  host: ""
-  port: 5743
-  username: ""
-  password: ""
+  host: "192.168.99.100"
+  port: 32779
+  username: guest
+  password: guest
   queues:
-    messages: ""
-    events: ""
-    channels: ""
+    messages: messages
+    events: events
+    channels: channels
