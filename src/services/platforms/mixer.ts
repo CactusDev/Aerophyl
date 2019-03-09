@@ -87,7 +87,13 @@ export class MixerService extends AbstractService {
 			Logger.error("Mixer", "Woah this message is null what happened");
 			return;
 		}
-		const method = message.meta.target ? "whisper" : "msg";
-		await this.chat.call(method, [message.message]);
+		let method = "msg";
+		let args = [message.message];
+		if (!!message.meta.target) {
+			method = "whisper";
+			args = [message.meta.target, message.message];
+		}
+
+		await this.chat.call(method, args);
 	}
 }

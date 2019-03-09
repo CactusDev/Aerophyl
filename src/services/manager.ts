@@ -19,16 +19,22 @@ export class ServiceManager {
 	constructor(private config: Config, private rabbit: RabbitHandler) {
 		this.rabbit.on("incoming:service:message", async (message: Amqp.Message) => {
 			const content: ProxyResponse = JSON.parse(message.getContent());
+
+			console.log("A");
 			if (!this.connected[content.channel]) {
 				return;
 			}
+			console.log("A " + this.connected[content.channel][0].service.name + " " + content.service);
 
 			if (!this.connected[content.channel].some(meta => meta.service.name === content.service)) {
 				return;
 			}
+			console.log("A");
 
 			message.ack();
+			console.log("A");
 			await this.send(content);
+			console.log("A");
 		});
 
 		this.rabbit.on("incoming:queue:channel", async (message: Amqp.Message) => {
@@ -42,10 +48,17 @@ export class ServiceManager {
 	public async connectChannels(filter: { [key: string]: string }) {
 		this.filter = filter;
 		// Temp things for testing
+		// let connection: ConnectionInformation = {
+		// 	service: "Twitch",
+		// 	auth: {
+		// 		access: this.config.stuff
+		// 	}
+		// };
+
 		let connection: ConnectionInformation = {
-			service: "Twitch",
+			service: "Mixer",
 			auth: {
-				access: this.config.stuff
+				access: this.config.otherstuff
 			}
 		};
 
@@ -53,16 +66,7 @@ export class ServiceManager {
 			botId: 25873,
 			username: "CactusBotDev"
 		};
-		// await this.connectChannel("innectic", connection, bot);
-
-		// connection = {
-		// 	service: "Mixer",
-		// 	auth: {
-		// 		access: this.config.otherstuff
-		// 	}
-		// };
-
-		// await this.connectChannel("innectic", connection, bot);
+		await this.connectChannel("innectic", connection, bot);
 	}
 
 	public async stop() {
