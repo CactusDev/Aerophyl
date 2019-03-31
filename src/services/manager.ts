@@ -17,24 +17,23 @@ export class ServiceManager {
 	private connected: ConnectedChannels = {};
 
 	constructor(private config: Config, private rabbit: RabbitHandler) {
-		this.rabbit.on("incoming:service:message", async (message: Amqp.Message) => {
-			const content: ProxyResponse = JSON.parse(message.getContent());
+		this.rabbit.on("incoming:service:message", async (messages: Amqp.Message) => {
+			const content: ProxyResponse[] = JSON.parse(messages.getContent());
+			content.sort((a, b) => a.order - b.order);
+			content.forEach(async item => {
+				if (!this.connected[item.channel]) {
+					return;
+				}
 
-			console.log("A");
-			if (!this.connected[content.channel]) {
-				return;
-			}
-			console.log("A " + this.connected[content.channel][0].service.name + " " + content.service);
+				if (!this.connected[item.channel].some(meta => meta.service.name === item.service)) {
+					return;
+				}
 
-			if (!this.connected[content.channel].some(meta => meta.service.name === content.service)) {
-				return;
-			}
-			console.log("A");
-
-			message.ack();
-			console.log("A");
-			await this.send(content);
-			console.log("A");
+				messages.ack();
+				let current = content.length === 0 ? 0 : 50;
+				setTimeout(async () => await this.send(item), current);
+				current += 5;
+			})
 		});
 
 		this.rabbit.on("incoming:queue:channel", async (message: Amqp.Message) => {
@@ -116,6 +115,7 @@ export class ServiceManager {
 			service
 		});
 		this.connected[channel] = connected;
+		await this.rabbit.queueChatMessage({ type: "event", event: "start", target: null, channel, service: connection.service, extra: { new: true } });
 	}
 
 	public async send(message: ProxyResponse) {

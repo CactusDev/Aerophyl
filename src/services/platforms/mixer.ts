@@ -67,6 +67,7 @@ export class MixerService extends AbstractService {
 		}
 
 		const serviceMessage: ServiceMessage = {
+			type: "message",
 			botInfo: meta.bot,
 			channel: meta.channel,
 			meta: {
@@ -77,8 +78,7 @@ export class MixerService extends AbstractService {
 			parts,
 			service: "Mixer",
 			source: message.user_name
-		}
-
+		};
 		return serviceMessage;
 	}
 

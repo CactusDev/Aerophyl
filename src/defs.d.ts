@@ -18,6 +18,7 @@ interface BotInfo {
 }
 
 interface ServiceMessage {
+    type: "message";
 	parts: string[];
 	source: string;
 	channel: string;
@@ -27,13 +28,17 @@ interface ServiceMessage {
 }
 
 interface ServiceEvent {
-	event: string;
-	target: string;
-	channel: string;
-	service: ServiceType;
+    type: "event";
+    event: string;
+    target: string | null;
+    channel: string;
+    service: ServiceType;
+    extra: any;
 }
 
+
 interface ProxyResponse {
+    order: number;
     channel: string;
     message: string;
     service: string;

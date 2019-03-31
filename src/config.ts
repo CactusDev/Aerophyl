@@ -12,6 +12,7 @@ export class Config {
 			messages: string;
 			events: string;
 			channels: string;
+			event: string;
 		}
 	};
 }
