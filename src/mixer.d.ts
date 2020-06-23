@@ -17,3 +17,10 @@ interface MixerChatResponse {
 	roles: string[];
 	permissions: string[];
 }
+
+interface MixerAuthenticationResponse {
+	access_token: string;
+	token_type: string;
+	expires_in: number;
+	refresh_token: string;
+}

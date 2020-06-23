@@ -13,16 +13,19 @@ import { sleep } from "../../util";
 export class TwitchService extends AbstractService {
 	private instance: any;
 
-	protected async doConnect(channel: string, bot: BotInfo): Promise<boolean> {
+	public async setup(): Promise<void> {
+	}
+
+	protected async doConnect(): Promise<boolean> {
 		const options = {
 			connection: {
 				reconnect: false
 			},
 			identity: {
-				username: bot.botId,
+				username: this.bot.botId,
 				password: `oauth:${this.info.auth.access}`
 			},
-			channels: [channel]
+			channels: [this.channel]
 		}
 
 		const instance = new tmi.client(options);
@@ -38,7 +41,7 @@ export class TwitchService extends AbstractService {
 				return;
 			}
 
-			const result = await this.onMessage(message, { state, bot, source });
+			const result = await this.onMessage(message, { state, source });
 			await this.rabbit.queueChatMessage(result);
 		});
 		this.instance = instance;
@@ -64,6 +67,10 @@ export class TwitchService extends AbstractService {
 		return true;
 	}
 
+	public async reauthenticate(skip: boolean): Promise<boolean> {
+		return true;
+	}
+
 	protected async doDisconnect(): Promise<boolean> {
 		try {
 			await this.instance.disconnect();
@@ -77,7 +84,7 @@ export class TwitchService extends AbstractService {
 	public async onMessage(message: string, meta: any): Promise<ServiceMessage> {
 		const serviceMessage: ServiceMessage = {
 			type: "message",
-			botInfo: meta.bot,
+			botInfo: this.bot,
 			channel: meta.source.replace("#", ""),
 			meta: meta.state,
 			parts: message.toString().split(" "),

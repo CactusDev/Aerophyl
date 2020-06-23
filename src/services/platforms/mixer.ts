@@ -16,13 +16,25 @@ export class MixerService extends AbstractService {
 	private api: MixerAPI;
 	private chat: ChatSocket;
 
-	protected async doConnect(channel: string, bot: BotInfo): Promise<boolean> {
+	public async setup(): Promise<void> {
 		this.api = new MixerAPI(this.info.auth.access);
+	}
 
-		const channelInfo = await this.api.getChannel(channel);
+	protected async doConnect(): Promise<boolean> {
+		setTimeout(async () => {
+			const reconnected = await this.reauthenticate(false);
+			if (!reconnected) {
+				console.error(`${this.channel}: could not reconnect.`);
+				return;
+			}
+			Logger.info("services", `${this.channel}: reconnected and authorized.`);
+		}, this.info.auth.expires * 1000);
+
+		const channelInfo = await this.api.getChannel(this.channel);
 
 		const chatInfo = await this.api.getChatEndpoints(channelInfo.id);
 		if (!chatInfo) {
+			console.error("could not get chat info");
 			return false;
 		}
 
@@ -30,14 +42,14 @@ export class MixerService extends AbstractService {
 
 		let auth: IUserAuth;
 		try {
-			auth = await chat.auth(channelInfo.id, bot.botId, chatInfo.authkey);
+			auth = await chat.auth(channelInfo.id, this.bot.botId, chatInfo.authkey);
 		} catch (e) {
 			Logger.error("services", e);
 			return false;
 		}
 
 		chat.on("ChatMessage", async (message: IChatMessage) => {
-			const response = await this.onMessage(message, { bot, channel });
+			const response = await this.onMessage(message, { });
 			await this.rabbit.queueChatMessage(response);
 		});
 		this.chat = chat;
@@ -50,6 +62,12 @@ export class MixerService extends AbstractService {
 		console.log(`Attempting to reconnect... Waiting ${time} seconds...`);
 		await sleep(time * 1000);
 
+		const result = await this.reauthenticate(false);
+		if (!result) {
+			console.error("could not reauthenticate with Mixer.");
+			return false;
+		}
+
 		return true;
 	}
 
@@ -58,18 +76,49 @@ export class MixerService extends AbstractService {
 		return true;
 	}
 
-	public async onMessage(message: IChatMessage, meta: any): Promise<ServiceMessage> {
-		Logger.info("services", `<- Message(Mixer [${meta.channel}])`, chalk.green(message.user_name) + ":", chalk.magenta(message));
-
-		const parts: string[] = [];
-		for (let part of message.message.message) {
-			parts.push(part.text);
+	public async reauthenticate(skip: boolean): Promise<boolean> {
+		if (!this.client || !this.info.auth.refresh) {
+			// If we don't have a refresh token, this is super bad and we have to drop this channel.
+			console.error("no client or no refresh token");
+			return false;
 		}
+		// In the case that we do have the refresh token, lets do it.
+		const result = await this.api.refreshToken(this.client, this.info.auth.refresh);
+		if (result == null) {
+			console.error("could not refresh token");
+			return false;
+		}
+
+		const updateResult = await this.cactus.updateToken(this.channel, this.info.service, {
+			access: result.access_token,
+			expiration: result.expires_in,
+			refresh: result.refresh_token
+		});
+		if (!updateResult) {
+			console.error("could not update token");
+			return false;
+		}
+
+		this.info.auth.access = result.access_token;
+		this.info.auth.refresh = result.refresh_token;
+		this.info.auth.expires = result.expires_in;
+
+		if (!skip) {
+			this.chat.close();
+			return await this.connect(true);
+		}
+		return true;
+	}
+
+	public async onMessage(message: IChatMessage, meta: any): Promise<ServiceMessage> {
+		Logger.info("services", `<- Message(Mixer [${this.channel}])`, chalk.green(message.user_name) + ":", chalk.magenta(message));
+
+		const parts: string[] = message.message.message.map(message => message.text);
 
 		const serviceMessage: ServiceMessage = {
 			type: "message",
-			botInfo: meta.bot,
-			channel: meta.channel,
+			botInfo: this.bot,
+			channel: this.channel,
 			meta: {
 				role: message.user_roles[0],
 				action: message.message.meta.me || false,

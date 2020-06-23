@@ -1,7 +1,5 @@
 
 export class Config {
-	public stuff: string;
-	public otherstuff: string;
 	public identifier: string;
 	public rabbitmq: {
 		host: string;
@@ -15,4 +13,5 @@ export class Config {
 			event: string;
 		}
 	};
+	public services: {[key: string]: OAuthClient};
 }

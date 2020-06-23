@@ -2,6 +2,7 @@
 import { ServiceStatus } from ".";
 import { IStrategy, ExponentialBackoffStrategy } from "../strategies";
 import { RabbitHandler } from "../rabbit";
+import { CactusAPI } from "./platforms/api";
 
 import { Logger } from "cactus-stl";
 
@@ -19,26 +20,30 @@ export interface QueuedChannel {
 
 export abstract class AbstractService {
 	protected _status: ServiceStatus = ServiceStatus.NONE;
-	private _name: string;
-	private _single: boolean;
+	protected reconnectionStrategy = new ExponentialBackoffStrategy();
+	public name: string;
+	public single: boolean;
 
-	constructor(protected info: ConnectionInformation, protected rabbit: RabbitHandler, protected reconnectionStrategy = new ExponentialBackoffStrategy()) {
-
+	constructor(protected channel: string, protected info: ConnectionInformation, protected bot: BotInfo, protected rabbit: RabbitHandler, protected cactus: CactusAPI, protected client?: OAuthClient) {
 	}
 
-	public async connect(channel: string, bot: BotInfo) {
-		if (this.status !== ServiceStatus.NONE && this.single) {
+	public async connect(reconnecting: boolean): Promise<boolean> {
+		if (reconnecting) {
+			Logger.info("services", `Reconnecting to ${this.channel}`);
+			this.status = ServiceStatus.RECONNECTING;
+		} else if (this.status !== ServiceStatus.NONE && this.single) {
 			Logger.error("services", `Attempted to create a new ${this.name} handler, but this is a single instance!`);
 			return false;
 		}
 		// Not already attempting to connect, so actually connect.
-		const connected = await this.doConnect(channel, bot);
+		const connected = await this.doConnect();
 		if (!connected) {
-			Logger.info("services", `Unable to connect to channel ${channel} on service ${name} as user ${bot.username}`);
-			return;
+			Logger.info("services", `Unable to connect to channel ${this.channel} on service ${name} as user ${this.bot.username}`);
+			return false;
 		}
 		this.status = ServiceStatus.CONNECTED;
-		Logger.info("services", `Connected to channel ${channel} on service ${this.name} as user ${bot.username}`);
+		Logger.info("services", `Connected to channel ${this.channel} on service ${this.name} as user ${this.bot.username}`);
+		return true;
 	}
 
 	public async reconnect(): Promise<boolean> {
@@ -53,9 +58,11 @@ export abstract class AbstractService {
 		return await this.disconnect();
 	}
 
-	protected abstract async doConnect(channel: string, bot: BotInfo): Promise<boolean>;
+	public abstract async setup(): Promise<void>;
+	protected abstract async doConnect(): Promise<boolean>;
 	protected abstract async doReconnect(): Promise<boolean>;
 	protected abstract async doDisconnect(): Promise<boolean>;
+	public abstract async reauthenticate(skip: boolean): Promise<boolean>;
 
 	public abstract async onMessage(message: any, meta: any): Promise<ServiceMessage>;
 
@@ -68,21 +75,5 @@ export abstract class AbstractService {
 
 	public get status(): ServiceStatus {
 		return this._status;
-	}
-
-	public get name(): string {
-		return this._name;
-	}
-
-	public set name(name: string) {
-		this._name = name;
-	}
-
-	public get single(): boolean {
-		return this._single;
-	}
-
-	public set single(single: boolean) {
-		this._single = single;
 	}
 }

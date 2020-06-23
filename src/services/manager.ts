@@ -8,19 +8,22 @@ import { serviceFromName } from ".";
 import * as Amqp from "amqp-ts";
 import { ChannelMeta, QueuedChannel } from ".";
 
+import { CactusAPI } from "./platforms/api";
+
+import * as moment from "moment";
+
 interface ConnectedChannels {
 	[name: string]: ChannelMeta[]
 }
 
 export class ServiceManager {
-	private filter: { [key: string]: string };
 	private connected: ConnectedChannels = {};
 
-	constructor(private config: Config, private rabbit: RabbitHandler) {
+	constructor(private cactus: CactusAPI, private config: Config, private rabbit: RabbitHandler) {
 		this.rabbit.on("incoming:service:message", async (messages: Amqp.Message) => {
 			const content: ProxyResponse[] = JSON.parse(messages.getContent());
-			content.sort((a, b) => a.order - b.order);
-			content.forEach(async item => {
+
+			content.sort((a, b) => a.order - b.order).forEach(async item => {
 				if (!this.connected[item.channel]) {
 					return;
 				}
@@ -30,7 +33,7 @@ export class ServiceManager {
 				}
 
 				messages.ack();
-				let current = content.length === 0 ? 0 : 50;
+				let current = content.length === 1 ? 0 : 50;
 				setTimeout(async () => await this.send(item), current);
 				current += 5;
 			})
@@ -40,32 +43,16 @@ export class ServiceManager {
 			const content: QueuedChannel = JSON.parse(message.getContent());
 			message.ack();
 
-			await this.connectChannel(content.channel, content.connection, content.bot);
+			await this.connectChannel(content.channel, content.connection.service);
 		});
 	}
 
-	public async connectChannels(filter: { [key: string]: string }) {
-		this.filter = filter;
-		// Temp things for testing
-		// let connection: ConnectionInformation = {
-		// 	service: "Twitch",
-		// 	auth: {
-		// 		access: this.config.stuff
-		// 	}
-		// };
+	public async connectChannels() {
+		// TODO: Get a list of unconnected channels and connect to them.
+		const channel = "innectic";
+		const service = "Mixer";
 
-		let connection: ConnectionInformation = {
-			service: "Mixer",
-			auth: {
-				access: this.config.otherstuff
-			}
-		};
-
-		let bot: BotInfo = {
-			botId: 25873,
-			username: "CactusBotDev"
-		};
-		await this.connectChannel("innectic", connection, bot);
+		await this.connectChannel(channel, service);
 	}
 
 	public async stop() {
@@ -82,31 +69,57 @@ export class ServiceManager {
 		}));
 	}
 
-	private async connectChannel(channel: string, connection: ConnectionInformation, bot: BotInfo) {
-		// See if we're filtering the name
-		if (this.filter && this.filter.name) {
-			// Since we're filtering the name of the channels we can connect to, lets
-			// see if the current channels name matches the regex.
-			const regex = new RegExp(this.filter.name);
-			// See if it matches
-			const results = regex.exec(channel);
-			if (!results || results.length < 1) {
-				// Not a match, get out.
-				return;
-			}
-		}
-
-		const serviceType = serviceFromName[connection.service];
+	private async connectChannel(channel: string, serviceName: ServiceType) {
+		const serviceType = serviceFromName[serviceName];
 		if (!serviceType) {
-			Logger.error("services", `Invalid service: ${connection.service}.`);
+			Logger.error("services", `Invalid service: ${serviceName}.`);
 			return;
 		}
+
+		const result = await this.cactus.getLastToken(channel.toLowerCase(), serviceName.toLowerCase());
+		if (result == null) {
+			console.log("could not get info");
+			return;
+		}
+
+		const a = moment(result.expiration);
+		const expires = (a.unix() - moment().utc(false).unix());
+		const forceRefresh = (expires <= 0 || (expires / 60) < 10);
+		console.log(forceRefresh + " " + expires + " " + (moment().utc(false).unix() - a.unix()));
+
+		const connection: ConnectionInformation = {
+			service: serviceName,
+			auth: {
+				access: result.access,
+				refresh: result.refresh,
+				expires
+			}
+		};
+
+		const bot: BotInfo = {
+			botId: +result.meta.bot.id,
+			username: result.meta.bot.username
+		};
 
 		// TODO: Allow services (that support it) to be connected to multiple times through the use of
 		// the same handler
 
-		let service: AbstractService = new (serviceType.bind(this, connection, this.rabbit));
-		await service.connect(channel, bot);
+		let service: AbstractService = new (serviceType.bind(this, channel, connection, bot, this.rabbit, this.cactus, this.config.services[serviceName.toLowerCase()]));
+		await service.setup();
+		
+		if (forceRefresh) {
+			Logger.info("services", `Force refreshing token for ${channel} before connecting.`);
+			if (!(await service.reauthenticate(true))) {
+				Logger.error("services", `could not reauthenticate for ${channel}`);
+				return;
+			}
+		}
+		const connectionResult = await service.connect(false);			
+
+		if (!connectionResult) {
+			Logger.error("services", `could not connect to ${channel}`);
+			return;
+		}
 
 		const connected = this.connected[channel] || [];
 		connected.push({

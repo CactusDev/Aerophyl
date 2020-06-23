@@ -36,7 +36,6 @@ interface ServiceEvent {
     extra: any;
 }
 
-
 interface ProxyResponse {
     order: number;
     channel: string;
@@ -47,4 +46,9 @@ interface ProxyResponse {
         action: boolean;
         target?: string;
     }
+}
+
+interface OAuthClient {
+    id: string;
+    secret: string;
 }

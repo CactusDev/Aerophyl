@@ -11,13 +11,13 @@ export class Core {
 
 	}
 
-	public async start(filter: { [key: string]: string }) {
+	public async start() {
 		process.on("SIGINT", () => this.stop());
 		process.on("SIGTERM", () => this.stop());
 
 		await this.rabbit.connect();
 		Logger.info("services", "Connecting to available channels...");
-		await this.manager.connectChannels(filter);
+		await this.manager.connectChannels();
 	}
 
 	public async stop() {

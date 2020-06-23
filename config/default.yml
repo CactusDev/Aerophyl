@@ -1,8 +1,4 @@
 
-# This is a temp thing to allow me to use oauth
-stuff: ""
-otherstuff: ""
-
 identifier: "testing"
 
 rabbitmq:
@@ -14,3 +10,8 @@ rabbitmq:
     messages: messages
     events: events
     channels: channels
+
+services:
+  mixer:
+    id: ""
+    secret: ""
