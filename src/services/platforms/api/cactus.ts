@@ -4,7 +4,7 @@ import axios from "axios";
 export class CactusAPI {
     private client: any;
 
-    constructor(base: string) {
+    constructor(public base: string) {
         this.client = axios.create({
             baseURL: base
         });

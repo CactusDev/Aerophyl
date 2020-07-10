@@ -33,6 +33,7 @@ export class ServiceManager {
 				}
 
 				messages.ack();
+				// HACK: Ewww???????????????????????????????
 				let current = content.length === 1 ? 0 : 50;
 				setTimeout(async () => await this.send(item), current);
 				current += 5;
@@ -50,7 +51,7 @@ export class ServiceManager {
 	public async connectChannels() {
 		// TODO: Get a list of unconnected channels and connect to them.
 		const channel = "innectic";
-		const service = "Mixer";
+		const service = "Twitch";
 
 		await this.connectChannel(channel, service);
 	}
@@ -82,17 +83,12 @@ export class ServiceManager {
 			return;
 		}
 
-		const a = moment(result.expiration);
-		const expires = (a.unix() - moment().utc(false).unix());
-		const forceRefresh = (expires <= 0 || (expires / 60) < 10);
-		console.log(forceRefresh + " " + expires + " " + (moment().utc(false).unix() - a.unix()));
-
 		const connection: ConnectionInformation = {
 			service: serviceName,
 			auth: {
 				access: result.access,
 				refresh: result.refresh,
-				expires
+				expires: 0
 			}
 		};
 
@@ -107,13 +103,13 @@ export class ServiceManager {
 		let service: AbstractService = new (serviceType.bind(this, channel, connection, bot, this.rabbit, this.cactus, this.config.services[serviceName.toLowerCase()]));
 		await service.setup();
 		
-		if (forceRefresh) {
-			Logger.info("services", `Force refreshing token for ${channel} before connecting.`);
-			if (!(await service.reauthenticate(true))) {
-				Logger.error("services", `could not reauthenticate for ${channel}`);
-				return;
-			}
-		}
+		// if (forceRefresh) {
+		// 	Logger.info("services", `Force refreshing token for ${channel} before connecting.`);
+		// 	if (!(await service.reauthenticate(true))) {
+		// 		Logger.error("services", `could not reauthenticate for ${channel}`);
+		// 		return;
+		// 	}
+		// }
 		const connectionResult = await service.connect(false);			
 
 		if (!connectionResult) {
@@ -132,7 +128,7 @@ export class ServiceManager {
 	}
 
 	public async send(message: ProxyResponse) {
-		if (this.connected[message.channel] === undefined) {
+		if (!this.connected[message.channel]) {
 			Logger.error("Services", "Attempted to send a message to a channel that is not connected?!")
 			return;
 		}
