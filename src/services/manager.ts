@@ -28,7 +28,7 @@ export class ServiceManager {
 					return;
 				}
 
-				if (!this.connected[item.channel].some(meta => meta.service.name === item.service)) {
+				if (!this.connected[item.channel].some(meta => meta.service.name.toLowerCase() === item.service.toLowerCase())) {
 					return;
 				}
 
@@ -132,7 +132,7 @@ export class ServiceManager {
 			Logger.error("Services", "Attempted to send a message to a channel that is not connected?!")
 			return;
 		}
-		this.connected[message.channel].filter(chan => chan.connection.service === message.service).forEach(
+		this.connected[message.channel].filter(chan => chan.connection.service.toLowerCase() === message.service.toLowerCase()).forEach(
 			async service => await service.service.send(message));
 	}
 }
