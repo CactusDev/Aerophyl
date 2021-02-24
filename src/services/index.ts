@@ -8,6 +8,7 @@ import { AbstractService } from "./base";
 
 export const serviceFromName: {[key: string]: typeof AbstractService} = {
 	"Twitch": Services.TwitchService,
+	"Glimesh": Services.GlimeshService
 };
 
 export enum ServiceStatus {

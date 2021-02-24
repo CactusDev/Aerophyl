@@ -1,5 +1,5 @@
 
-type ServiceType = "Twitch" | "Mixer" | "Discord";
+type ServiceType = "Twitch" | "Glimesh" | "Discord";
 
 interface OAuthData {
 	access: string;

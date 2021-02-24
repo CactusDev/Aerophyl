@@ -51,7 +51,7 @@ export class ServiceManager {
 	public async connectChannels() {
 		// TODO: Get a list of unconnected channels and connect to them.
 		const channel = "innectic";
-		const service = "Twitch";
+		const service = "Glimesh";
 
 		await this.connectChannel(channel, service);
 	}
